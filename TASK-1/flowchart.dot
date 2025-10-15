@@ -1,0 +1,56 @@
+digraph ATM {
+    rankdir=TB;
+    node [fontname="Arial", fontsize=10];
+
+    start [shape=oval, label="BAŞLA"];
+    pin_input [shape=parallelogram, label="PIN Gir"];
+    check_pin [shape=diamond, label="PIN Doğru mu?"];
+    wrong_pin [shape=box, label="kalan_hak = kalan_hak - 1"];
+    remaining_try [shape=parallelogram, label="Hatalı PIN! Kalan hak yazdır"];
+    blocked [shape=parallelogram, label="Kart bloke edildi"];
+    main_menu [shape=parallelogram, label="Çekilecek tutarı gir"];
+    check_multiple20 [shape=diamond, label="Tutar 20 TL katı mı?"];
+    invalid_amount [shape=parallelogram, label="Hata: 20 TL katı olmalı"];
+    check_balance [shape=diamond, label="Yeterli bakiye var mı?"];
+    insufficient_balance [shape=parallelogram, label="Hata: Yetersiz bakiye"];
+    check_limit [shape=diamond, label="Günlük limit aşılmış mı?"];
+    limit_exceeded [shape=parallelogram, label="Hata: Limit aşıldı"];
+    withdraw [shape=box, label="bakiye -= tutar\ngünlük_limit -= tutar"];
+    print_balance [shape=parallelogram, label="Kalan bakiye yazdır"];
+    another_txn [shape=diamond, label="Başka işlem istiyor musun?"];
+    exit [shape=oval, label="BİTİR"];
+
+    // Akışlar
+    start -> pin_input;
+    pin_input -> check_pin;
+
+    // PIN kontrolü
+    check_pin -> main_menu [label="Evet"];
+    check_pin -> wrong_pin [label="Hayır"];
+    wrong_pin -> remaining_try;
+    remaining_try -> check_pin [label="kalan_hak > 0"];
+    remaining_try -> blocked [label="kalan_hak == 0"];
+    blocked -> exit;
+
+    // Tutar kontrolü
+    main_menu -> check_multiple20;
+    check_multiple20 -> invalid_amount [label="Hayır"];
+    invalid_amount -> main_menu;
+    check_multiple20 -> check_balance [label="Evet"];
+
+    // Bakiye kontrolü
+    check_balance -> insufficient_balance [label="Hayır"];
+    insufficient_balance -> main_menu;
+    check_balance -> check_limit [label="Evet"];
+
+    // Limit kontrolü
+    check_limit -> limit_exceeded [label="Evet"];
+    limit_exceeded -> main_menu;
+    check_limit -> withdraw [label="Hayır"];
+
+    // Para çekme ve devam kararı
+    withdraw -> print_balance;
+    print_balance -> another_txn;
+    another_txn -> main_menu [label="Evet"];
+    another_txn -> exit [label="Hayır"];
+}
