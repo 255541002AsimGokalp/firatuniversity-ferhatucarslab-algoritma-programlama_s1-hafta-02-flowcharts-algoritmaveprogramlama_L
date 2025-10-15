@@ -1,0 +1,48 @@
+digraph HastaneSistemi {
+    rankdir=TB;
+    node [shape=box, style=rounded, fontname="Arial"];
+
+    start [label="BAŞLA", shape=oval];
+    kimlik [label="TC Kimlik No Oku"];
+    kontrol [label="Kimlik geçerli mi?", shape=diamond];
+    menu [label="İşlem Seç: 1-Randevu Al, 2-Tahlil Sonucu Gör", shape=parallelogram];
+
+    start -> kimlik -> kontrol;
+    kontrol -> menu [label="Evet"];
+    kontrol -> end [label="Hayır"];
+    
+    // --- Modül 1: Randevu Alma ---
+    subgraph cluster_randevu {
+        label="Randevu Modülü";
+        color=lightblue;
+
+        poliklinik [label="Poliklinik Seç"];
+        doktor [label="Doktor Listesi Göster"];
+        saat [label="Uygun Saatleri Göster"];
+        onay [label="Randevu Onayı ve SMS Gönder"];
+    }
+
+    // --- Modül 2: Tahlil Sonuçları ---
+    subgraph cluster_tahlil {
+        label="Tahlil Sonuçları Modülü";
+        color=lightgreen;
+
+        kontrol_tahlil [label="Tahlil Var mı?", shape=diamond];
+        kontrol_sonuc [label="Sonuç Hazır mı?", shape=diamond];
+        goruntule [label="Sonuç Görüntüle"];
+        bekle [label="Sonuç Hazır Değil Mesajı"];
+        pdf [label="PDF İndir Seçeneği"];
+    }
+
+    menu -> poliklinik [label="1 - Randevu Al"];
+    poliklinik -> doktor -> saat -> onay -> end;
+
+    menu -> kontrol_tahlil [label="2 - Tahlil Sonucu Gör"];
+    kontrol_tahlil -> kontrol_sonuc [label="Evet"];
+    kontrol_tahlil -> end [label="Hayır"];
+    kontrol_sonuc -> goruntule [label="Evet"];
+    kontrol_sonuc -> bekle [label="Hayır"];
+    goruntule -> pdf -> end;
+
+    end [label="BİTİR", shape=oval];
+}
