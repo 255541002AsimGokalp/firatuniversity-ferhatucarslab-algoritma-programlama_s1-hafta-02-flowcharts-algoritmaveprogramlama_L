@@ -1,0 +1,113 @@
+digraph AkilliEvGuvenlik {
+    rankdir=TB;
+    node [fontname="Inter", fontsize=11];
+
+    // Şekil türleri
+    start   [shape=oval, label="BAŞLA"];
+    init    [shape=box,  label="Başlatma\nalarmDurumu=KAPALI\nsessizMod=YANLIŞ"];
+    loopH   [shape=box,  label="ANA DÖNGÜ BAŞI"];
+
+    // Sensör okuma
+    read    [shape=parallelogram, label="OKU sensörler\n(kapı/pencere, PIR, duman, CO,\ncam kırılma, titreşim, kameraAI,\nsabotaj, internet, pil)"];
+
+    // Sağlık kontrolleri
+    batQ    [shape=diamond, label="pil < %15 ?"];
+    batOut  [shape=parallelogram, label="YAZ/BİLDİR: Pil düşük"];
+
+    netQ    [shape=diamond, label="internet yok mu?"];
+    netOut  [shape=parallelogram, label="YAZ/BİLDİR: GSM'e geçildi"];
+
+    // Tehdit skoru ve seviye
+    score   [shape=box, label="tehditSkoru hesapla\n(kural + ağırlık)"];
+    lvl     [shape=box, label="tehditSeviyesi ata\n(DÜŞÜK/ORTA/YÜKSEK/KRİTİK)"];
+
+    // Kararlar
+    lowQ    [shape=diamond, label="DÜŞÜK mü?"];
+    lowAct  [shape=box, label="KAYDET: düşük tehdit"];
+
+    midQ    [shape=diamond, label="ORTA mı?"];
+    midAct  [shape=box, label="BUZZER (ops.) + BİLDİR\nalarmDurumu=AÇIK"];
+
+    highQ   [shape=diamond, label="YÜKSEK mi?"];
+    highAct [shape=box, label="SİREN + KRİTİK BİLDİR\nCANLI GÖRÜNTÜ\nalarmDurumu=AÇIK"];
+
+    kritQ   [shape=diamond, label="KRİTİK mi?"];
+    kritAct [shape=box, label="SİREN + ACİL BİLDİR\nARAMA: İtfaiye/Acil\nalarmDurumu=AÇIK"];
+
+    // Rate limit
+    rlQ     [shape=diamond, label="(Şimdi - sonBildirim) > 60sn ?"];
+    rlAct   [shape=box, label="sonBildirimZamanı ← Şimdi"];
+
+    // Komutlar
+    rstQ    [shape=diamond, label="KOMUT: ALARM_SIFIRLA ?"];
+    rstAct  [shape=box, label="SİREN_KAPAT\nalarmDurumu=KAPALI"];
+
+    silQ    [shape=diamond, label="KOMUT: SESSİZ_MOD_AÇ ?"];
+    silAct  [shape=box, label="sessizMod=DOĞRU"];
+
+    sdlQ    [shape=diamond, label="KOMUT: SESSİZ_MOD_KAPAT ?"];
+    sdlAct  [shape=box, label="sessizMod=YANLIŞ"];
+
+    // Döngü sonu
+    sleep   [shape=box, label="UYKU(200ms)"];
+    back    [shape=oval, label="DÖNGÜ SONU"];
+
+    // Akışlar
+    start -> init -> loopH -> read;
+
+    read -> batQ;
+    batQ -> batOut [label="Evet"];
+    batQ -> netQ   [label="Hayır"];
+    batOut -> netQ;
+
+    netQ -> netOut [label="Evet"];
+    netQ -> score  [label="Hayır"];
+    netOut -> score;
+
+    score -> lvl;
+
+    // DÜŞÜK
+    lvl -> lowQ;
+    lowQ -> lowAct [label="Evet"];
+    lowQ -> midQ   [label="Hayır"];
+    lowAct -> midQ;
+
+    // ORTA
+    midQ -> midAct [label="Evet"];
+    midQ -> highQ  [label="Hayır"];
+    midAct -> highQ;
+
+    // YÜKSEK
+    highQ -> highAct [label="Evet"];
+    highQ -> kritQ   [label="Hayır"];
+    highAct -> kritQ;
+
+    // KRİTİK
+    kritQ -> kritAct [label="Evet"];
+    kritQ -> rlQ     [label="Hayır"];
+    kritAct -> rlQ;
+
+    // Rate limit
+    rlQ -> rlAct [label="Evet"];
+    rlQ -> rstQ  [label="Hayır"];
+    rlAct -> rstQ;
+
+    // Komutlar
+    rstQ -> rstAct [label="Evet"];
+    rstQ -> silQ   [label="Hayır"];
+    rstAct -> silQ;
+
+    silQ -> silAct [label="Evet"];
+    silQ -> sdlQ   [label="Hayır"];
+    silAct -> sdlQ;
+
+    sdlQ -> sdlAct [label="Evet"];
+    sdlQ -> sleep  [label="Hayır"];
+    sdlAct -> sleep;
+
+    // Sonsuz döngü geri ok
+    sleep -> back -> loopH [label="Sürekli", color="gray40", fontcolor="gray40"];
+
+    // Stil küçük iyileştirme
+    {rank=same; lowQ; midQ; highQ; kritQ}
+}
