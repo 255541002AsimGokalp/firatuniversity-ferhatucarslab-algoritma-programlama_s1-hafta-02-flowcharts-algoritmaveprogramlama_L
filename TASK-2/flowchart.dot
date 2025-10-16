@@ -1,0 +1,102 @@
+digraph SepetOdemeAkisi {
+  rankdir=TB;
+  node [fontname="Arial", fontsize=10];
+
+  start [label="BAŞLA", shape=oval];
+  login_chk [label="Kullanıcı oturumda mı?", shape=diamond];
+  login_scr [label="Giriş/Üyelik Ekranı", shape=parallelogram];
+  login_fail [label="Giriş başarısız → BİTİR", shape=oval];
+
+  browse [label="Kategori/Ürün Gezinme (DÖNGÜ)", shape=box];
+  select_item [label="Ürün & Adet Seç", shape=parallelogram];
+  stock_chk [label="Stok yeterli mi?", shape=diamond];
+  add_cart [label="Sepete Ekle / Satır Güncelle", shape=box];
+  stock_warn [label="Yetersiz stok uyarısı", shape=parallelogram];
+
+  cart_edit [label="Sepeti Görüntüle & Düzenle (DÖNGÜ)", shape=box];
+  subtotal [label="Ara Toplamı Hesapla", shape=box];
+
+  has_coupon [label="Kupon girildi mi?", shape=diamond];
+  coupon_val [label="Kupon geçerli mi?", shape=diamond];
+  coupon_apply [label="İndirim Uygula", shape=box];
+  coupon_invalid [label="Geçersiz kupon", shape=parallelogram];
+
+  min_chk [label="(AraToplam-İndirim) ≥ 50 TL?", shape=diamond];
+  min_warn [label="Minimum 50 TL uyarısı", shape=parallelogram];
+
+  ship_chk [label="Net Sepet ≥ 200 TL?", shape=diamond];
+  ship_free [label="Kargo Ücretsiz (0 TL)", shape=box];
+  ship_calc [label="Kargo Ücreti Hesapla", shape=box];
+  total [label="Sipariş Tutarı = Net + Kargo", shape=box];
+
+  pay_sel [label="Ödeme Yöntemi Seç (Kart/Havale/Kapıda)", shape=diamond];
+
+  card_pay [label="Kart Ödemesi", shape=box];
+  card_ok [label="Kart Başarılı mı?", shape=diamond];
+  card_fail [label="Ödeme Hatası → Yöntem Değiştir/Yeniden Dene", shape=parallelogram];
+
+  havale [label="Havale Bilgisi Göster\nSipariş: Ödeme Bekleniyor", shape=box];
+
+  kapida_chk [label="Kapıda ödeme uygun mu?", shape=diamond];
+  kapida_fee [label="Kapıda Ödeme Ücreti Ekle", shape=box];
+  kapida_na [label="Kapıda ödeme yok → Yöntem seçimine dön", shape=parallelogram];
+
+  create_order [label="Sipariş Oluştur", shape=box];
+  post_ops [label="Stok Düş • Fatura • Bildirim • Kargo", shape=box];
+  end [label="BİTİR", shape=oval];
+
+  // Edges
+  start -> login_chk;
+  login_chk -> browse [label="EVET"];
+  login_chk -> login_scr [label="HAYIR"];
+  login_scr -> login_chk [label="Giriş başarılı"];
+  login_scr -> login_fail [label="Giriş başarısız"];
+
+  browse -> select_item;
+  select_item -> stock_chk;
+  stock_chk -> add_cart [label="EVET"];
+  stock_chk -> stock_warn [label="HAYIR"];
+  stock_warn -> browse;
+  add_cart -> browse [label="Devam gezinti? EVET"];
+  add_cart -> cart_edit [label="Devam gezinti? HAYIR"];
+
+  cart_edit -> subtotal;
+
+  subtotal -> has_coupon;
+  has_coupon -> coupon_val [label="EVET"];
+  has_coupon -> min_chk [label="HAYIR"];
+
+  coupon_val -> coupon_apply [label="EVET"];
+  coupon_val -> coupon_invalid [label="HAYIR"];
+  coupon_apply -> min_chk;
+  coupon_invalid -> min_chk;
+
+  min_chk -> ship_chk [label="EVET"];
+  min_chk -> min_warn [label="HAYIR"];
+  min_warn -> cart_edit;
+
+  ship_chk -> ship_free [label="EVET"];
+  ship_chk -> ship_calc [label="HAYIR"];
+  ship_free -> total;
+  ship_calc -> total;
+
+  total -> pay_sel;
+
+  pay_sel -> card_pay [label="Kart"];
+  pay_sel -> havale [label="Havale"];
+  pay_sel -> kapida_chk [label="Kapıda"];
+
+  card_pay -> card_ok;
+  card_ok -> create_order [label="EVET"];
+  card_ok -> card_fail [label="HAYIR"];
+  card_fail -> pay_sel;
+
+  havale -> create_order;
+
+  kapida_chk -> kapida_fee [label="EVET"];
+  kapida_chk -> kapida_na [label="HAYIR"];
+  kapida_na -> pay_sel;
+  kapida_fee -> create_order;
+
+  create_order -> post_ops -> end;
+}
