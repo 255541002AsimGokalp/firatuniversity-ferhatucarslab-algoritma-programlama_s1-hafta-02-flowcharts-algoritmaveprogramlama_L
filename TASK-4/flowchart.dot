@@ -1,0 +1,84 @@
+digraph DersKayit {
+  rankdir=TB;
+  node [fontname="Helvetica"];
+
+  // Genel düğüm tipleri
+  start   [label="Başla", shape=oval];
+  login   [label="Öğrenci girişi\n(ogr_no + şifre)", shape=box];
+  list    [label="Ders listesini göster", shape=box];
+  choose  [label="İşlem seç: Ekle / Çıkar / Bitir", shape=box];
+
+  // Karar (kontrol) düğümleri: diamond
+  cred    [label="Giriş başarılı mı?", shape=diamond];
+  found   [label="Ders bulundu mu?", shape=diamond];
+  kont    [label="Kontenjan uygun mu?", shape=diamond];
+  prereq  [label="Ön koşul sağlanıyor mu?", shape=diamond];
+  clash   [label="Zaman çakışması var mı?", shape=diamond];
+  kredit  [label="Toplam kredi + ders ≤ 35 mi?", shape=diamond];
+  more    [label="Devam etmek ister misiniz?", shape=diamond];
+  gpaok   [label="GPA < 2.5 mi?", shape=diamond];
+  adv     [label="Danışman onayı verildi mi?", shape=diamond];
+  approve [label="Öğrenci onayı?", shape=diamond];
+
+  // Süreç düğümleri
+  add     [label="Ders ekle (listeye + krediye)", shape=box];
+  remask  [label="Çıkarılacak ders kodu al", shape=box];
+  remdo   [label="Dersi listeden çıkar\n(krediyi düş)", shape=box];
+  notf    [label="Ders bulunamadı / Seçili değil", shape=box];
+  summary [label="Kayıt özetini göster\n(seçilenler + toplam kredi)", shape=box];
+  endok   [label="Kayıt tamamlandı", shape=oval];
+  endfail [label="Kayıt tamamlanamadı / İptal", shape=oval];
+
+  // Akış
+  start -> login -> cred;
+  cred -> list   [label="EVET"];
+  cred -> login  [label="HAYIR"];
+
+  list -> choose;
+
+  // Ekle akışı
+  choose -> found   [label="EKLE"];
+  found  -> kont    [label="EVET"];
+  found  -> notf    [label="HAYIR"];
+  notf   -> choose;
+
+  kont   -> prereq  [label="EVET"];
+  kont   -> choose  [label="HAYIR\n(Kontenjan dolu)"];
+
+  prereq -> clash   [label="EVET"];
+  prereq -> choose  [label="HAYIR\n(Ön koşul yok/sağlanmıyor)"];
+
+  clash  -> kredit  [label="HAYIR\n(Çakışma yok)"];
+  clash  -> choose  [label="EVET\n(Çakışma var)"];
+
+  kredit -> add     [label="EVET"];
+  kredit -> choose  [label="HAYIR\n(Kredi > 35)"];
+
+  add -> more;
+
+  // Çıkar akışı
+  choose -> remask  [label="ÇIKAR"];
+  remask -> found2  [label=""]; // sanal karar
+  found2 [label="Seçilenler içinde mi?", shape=diamond];
+  found2 -> remdo   [label="EVET"];
+  found2 -> notf    [label="HAYIR"];
+  remdo  -> more;
+  notf   -> choose;
+
+  // Bitir akışı -> özet ve onaylar
+  choose -> summary [label="BİTİR"];
+  summary -> gpaok;
+
+  gpaok  -> adv     [label="EVET"];
+  gpaok  -> approve [label="HAYIR"];
+
+  adv    -> approve [label="EVET"];
+  adv    -> endfail [label="HAYIR"];
+
+  approve -> endok   [label="EVET"];
+  approve -> endfail [label="HAYIR"];
+
+  // Döngüye dönüş
+  more -> choose   [label="EVET"];
+  more -> summary  [label="HAYIR"];
+}
